@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "AI Pet Decision Layer MVP",
+  "description": "Behavioral intelligence engine prototype for context-aware companion decisions.",
+  "version": "0.1.0",
+  "permissions": [
+    "tabs",
+    "storage",
+    "idle",
+    "alarms"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "https://api.open-meteo.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "AI Pet Decision Layer"
+  }
+}
