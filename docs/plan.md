@@ -29,16 +29,18 @@ Goal: prove the system can behave like a context-aware companion through behavio
 
 ## System Architecture
 
-```text
-[Content Script]
-  ↓
-[Activity Collector]
-  ↓
-[State Manager]
-  ↓
-[Decision Engine]
-  ↓
-[Decision Output Logger]
+```mermaid
+flowchart TD
+    A[Content Script]
+    B[Activity Collector]
+    C[State Manager]
+    D[Decision Engine]
+    E[Decision Output Logger]
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
 ```
 
 ## Detectable Activities
