@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Pet Decision Layer Settings</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 20px; max-width: 760px; }
+      h1 { font-size: 22px; }
+      form { display: grid; gap: 12px; }
+      .row { display: grid; grid-template-columns: 1fr 140px; gap: 12px; align-items: center; }
+      label { font-size: 14px; }
+      input[type='number'] { padding: 6px; }
+      .actions { display: flex; gap: 8px; }
+      .hint { color: #666; font-size: 12px; }
+      #status { margin-top: 10px; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <h1>Decision Threshold Settings</h1>
+    <p class="hint">Adjust thresholds and cooldowns used by the rules engine and state model.</p>
+
+    <form id="config-form">
+      <div class="row"><label for="idleMinutesThreshold">Idle minutes threshold</label><input id="idleMinutesThreshold" type="number" min="1" /></div>
+      <div class="row"><label for="multitaskTabSwitchThreshold">Tab switches for multitasking</label><input id="multitaskTabSwitchThreshold" type="number" min="1" /></div>
+      <div class="row"><label for="multitaskShortActiveMinutes">Short active-tab duration (minutes)</label><input id="multitaskShortActiveMinutes" type="number" min="1" /></div>
+      <div class="row"><label for="focusedActiveMinutes">Focused mode minimum active minutes</label><input id="focusedActiveMinutes" type="number" min="1" /></div>
+      <div class="row"><label for="focusedKeyEventsThreshold">Focused mode key events threshold</label><input id="focusedKeyEventsThreshold" type="number" min="1" /></div>
+      <div class="row"><label for="morningStartHour">Morning start hour (0-23)</label><input id="morningStartHour" type="number" min="0" max="23" /></div>
+      <div class="row"><label for="morningEndHour">Morning end hour (0-23)</label><input id="morningEndHour" type="number" min="0" max="23" /></div>
+      <div class="row"><label for="weatherDataMaxAgeMinutes">Weather data max age (minutes)</label><input id="weatherDataMaxAgeMinutes" type="number" min="1" /></div>
+      <div class="row"><label for="suggestRefocusCooldownMinutes">Refocus cooldown (minutes)</label><input id="suggestRefocusCooldownMinutes" type="number" min="1" /></div>
+      <div class="row"><label for="suggestBreakCooldownMinutes">Break suggestion cooldown (minutes)</label><input id="suggestBreakCooldownMinutes" type="number" min="1" /></div>
+      <div class="row"><label for="fatigueThreshold">Fatigue threshold (0-1)</label><input id="fatigueThreshold" type="number" min="0" max="1" step="0.01" /></div>
+      <div class="row"><label for="weatherBriefsEnabled">Enable morning weather brief</label><input id="weatherBriefsEnabled" type="checkbox" /></div>
+
+      <div class="actions">
+        <button type="submit">Save</button>
+        <button type="button" id="reset-btn">Reset defaults</button>
+      </div>
+    </form>
+
+    <div id="status"></div>
+
+    <script type="module" src="./options.js"></script>
+  </body>
+</html>

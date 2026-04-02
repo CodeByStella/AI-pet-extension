@@ -210,7 +210,25 @@ These signals support decisions like:
 - `detect_flow_state`
 - `detect_cognitive_overload`
 
-### 10. What Should Not Be Collected
+### 10. External Context Signals (Optional but Implementable)
+
+These signals are not strictly browser-behavior events, but can be fetched by the extension in a privacy-safe way to enable proactive and useful support.
+
+- Current weather by coarse location or user-selected city
+- Severe weather alerts (heat, storm, snow, air quality)
+- Calendar block density if user explicitly connects calendar
+- Public holiday / weekend status
+- Local sunrise / sunset window
+
+These signals support decisions like:
+
+- `morning_weather_brief`
+- `weather_alert_checkin`
+- `suggest_walk_break` (if weather is pleasant)
+- `suggest_indoor_break` (if weather is poor)
+- `align_nudges_with_calendar_load`
+
+### 11. What Should Not Be Collected
 
 To keep the MVP safe and privacy-respecting, avoid collecting:
 
@@ -277,6 +295,16 @@ These are not UI yet, but they define how the future companion should behave.
 - `increase_attention`
 - `lower_attention`
 
+### 8. Proactive Utility Decisions
+
+These decisions provide lightweight value beyond reactive behavior analysis.
+
+- `morning_weather_brief`
+- `weather_alert_checkin`
+- `suggest_prepare_for_rain`
+- `suggest_sunlight_break`
+- `suggest_end_of_day_shutdown`
+
 ## State Model
 
 Raw activity should be converted into stable, interpretable states.
@@ -293,6 +321,9 @@ Example states:
 - `distracted`
 - `fatigued`
 - `returning_after_break`
+- `morning_planning`
+- `weather_constrained`
+- `end_of_day_winddown`
 
 Example logic:
 
@@ -308,6 +339,14 @@ if idle_time is high:
 if tab_switch_rate is high
 and dwell_time is low:
   state = "multi_tasking"
+
+if local_time is morning_window
+and first_session_of_day is true
+and user_has_enabled_weather_briefs is true:
+  state = "morning_planning"
+
+if severe_weather_alert is true:
+  state = "weather_constrained"
 ```
 
 Storage:
@@ -337,6 +376,33 @@ THEN decision = "avoid_interrupting"
 
 IF state == "multi_tasking"
 THEN decision = "suggest_refocus"
+
+IF state == "morning_planning"
+AND weather_data_age_minutes < 30
+THEN decision = "morning_weather_brief"
+
+IF state == "weather_constrained"
+THEN decision = "weather_alert_checkin"
+```
+
+### Time-Aware / Context-Aware Rule Examples
+
+Use explicit guardrails to avoid noisy or repetitive notifications.
+
+```text
+IF decision == "morning_weather_brief"
+AND local_time between 06:30 and 10:00
+AND not_sent_today("morning_weather_brief")
+THEN emit decision once
+
+IF weather_condition in ["rain", "snow"]
+AND user_has_focus_block_next_60m is true
+THEN decision = "suggest_prepare_for_rain"
+
+IF local_time between 16:30 and 19:30
+AND active_duration_today > threshold
+AND tab_switch_rate_recent is high
+THEN decision = "suggest_end_of_day_shutdown"
 ```
 
 ### Scoring Layer Next
@@ -385,7 +451,10 @@ Format:
   },
   "state": "fatigued",
   "decision": "suggest_break",
-  "confidence": 0.82
+  "confidence": 0.82,
+  "trigger": "rule_based",
+  "ruleId": "fatigue_break_v1",
+  "cooldownApplied": true
 }
 ```
 
