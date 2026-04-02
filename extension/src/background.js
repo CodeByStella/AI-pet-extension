@@ -14,9 +14,10 @@ async function init() {
   await stateManager.hydrate();
   await collector.init();
 
-  chrome.runtime.onMessage.addListener((msg) => {
+  chrome.runtime.onMessage.addListener((msg, sender) => {
     if (msg?.channel === 'activity_signal' && msg.signal) {
-      collector.ingestContentSignal(msg.signal);
+      const tabId = sender?.tab?.id ?? null;
+      collector.ingestContentSignal({ ...msg.signal, tabId });
     }
   });
 
@@ -41,9 +42,14 @@ async function onSignal(signal) {
   await appendSignalLog(signal);
   const state = await stateManager.consumeSignal(signal);
   const decision = rulesEngine.evaluate(state);
-  await appendDecisionLog({
+  const decisionLog = await appendDecisionLog({
     signals: summarizeSignals(signal, state),
     ...decision
+  });
+
+  await publishDecisionToTab({
+    tabId: typeof signal.tabId === 'number' ? signal.tabId : collector.activeTabId,
+    decisionLog
   });
 }
 
@@ -56,6 +62,19 @@ function summarizeSignals(signal, state) {
     scrollEvents: state.scrollEvents,
     signalType: signal.type
   };
+}
+
+async function publishDecisionToTab({ tabId, decisionLog }) {
+  if (typeof tabId !== 'number') return;
+
+  try {
+    await chrome.tabs.sendMessage(tabId, {
+      channel: 'decision_made',
+      decision: decisionLog
+    });
+  } catch {
+    // Ignore: tab may not have a content script (restricted URL, permissions, etc.)
+  }
 }
 
 async function updateWeather() {

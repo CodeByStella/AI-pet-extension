@@ -20,6 +20,17 @@ function emit(type, extra = {}) {
   });
 }
 
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg?.channel !== 'decision_made' || !msg.decision) return;
+
+  const { decision } = msg;
+  const label = `[AI Pet] decision=${decision.decision} state=${decision.state} conf=${decision.confidence}`;
+
+  console.groupCollapsed(label);
+  console.log(decision);
+  console.groupEnd();
+});
+
 window.addEventListener('scroll', throttle(() => emit('scroll', { y: window.scrollY }), 1000), {
   passive: true
 });
