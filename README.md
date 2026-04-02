@@ -2,7 +2,7 @@
 
 A Chrome Extension MVP focused on a **decision layer** that interprets browser behavior and produces companion-style decisions (without rendering a pet UI yet).
 
-## Current Scope
+## Current Scopes
 
 This repository currently contains planning artifacts for the Decision Layer MVP. The implementation goal is to turn low-level browser activity into meaningful user-state and action decisions.
 
