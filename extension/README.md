@@ -6,6 +6,7 @@
 2. Enable **Developer mode**
 3. Click **Load unpacked**
 4. Select the `extension/` folder
+5. Open extension **Details** -> **Extension options** to tune thresholds
 
 ## What is implemented
 
@@ -16,6 +17,7 @@
   - decision + signal logging in `chrome.storage.local`
 - Content script event capture (`scroll`, `mousemove`, `click`, `keydown`)
 - Optional weather context refresh from Open-Meteo every 30 minutes
+- Configurable thresholds/cooldowns via `options.html` stored in `chrome.storage.local`
 
 ## Storage keys
 
@@ -23,6 +25,7 @@
 - `signalLogs`
 - `decisionLogs`
 - `weatherLocation` (optional: `{ latitude, longitude }`)
+- `userConfig` (thresholds and feature toggles)
 
 ## Notes
 

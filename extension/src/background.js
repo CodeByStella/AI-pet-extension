@@ -2,12 +2,15 @@ import { ActivityCollector } from './activity/collector.js';
 import { RulesEngine } from './decision/rulesEngine.js';
 import { StateManager } from './state/stateManager.js';
 import { appendDecisionLog, appendSignalLog } from './utils/logger.js';
+import { CONFIG_KEY, DEFAULT_CONFIG } from './config/defaults.js';
 
-const stateManager = new StateManager();
-const rulesEngine = new RulesEngine();
+let activeConfig = { ...DEFAULT_CONFIG };
+const stateManager = new StateManager(activeConfig);
+const rulesEngine = new RulesEngine(activeConfig);
 const collector = new ActivityCollector(onSignal);
 
 async function init() {
+  await hydrateConfig();
   await stateManager.hydrate();
   await collector.init();
 
@@ -25,6 +28,13 @@ async function init() {
   });
 
   await updateWeather();
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes[CONFIG_KEY]) return;
+    activeConfig = { ...DEFAULT_CONFIG, ...(changes[CONFIG_KEY].newValue || {}) };
+    stateManager.setConfig(activeConfig);
+    rulesEngine.setConfig(activeConfig);
+  });
 }
 
 async function onSignal(signal) {
@@ -59,6 +69,13 @@ async function updateWeather() {
       error: err instanceof Error ? err.message : String(err)
     });
   }
+}
+
+async function hydrateConfig() {
+  const stored = await chrome.storage.local.get(CONFIG_KEY);
+  activeConfig = { ...DEFAULT_CONFIG, ...(stored[CONFIG_KEY] || {}) };
+  stateManager.setConfig(activeConfig);
+  rulesEngine.setConfig(activeConfig);
 }
 
 async function fetchWeather(latitude, longitude) {

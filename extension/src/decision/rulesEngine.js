@@ -1,8 +1,10 @@
 import { getDayKey } from '../utils/time.js';
 import { computeFatigueScore } from './scorer.js';
+import { DEFAULT_CONFIG } from '../config/defaults.js';
 
 export class RulesEngine {
-  constructor() {
+  constructor(config = DEFAULT_CONFIG) {
+    this.config = { ...DEFAULT_CONFIG, ...config };
     this.cooldowns = new Map();
     this.lastDecisionDay = new Map();
   }
@@ -14,17 +16,17 @@ export class RulesEngine {
 
     if (state.current === 'morning_planning' && this.oncePerDay('morning_weather_brief')) {
       const weatherAgeMin = state.weatherFetchedAtMs ? (Date.now() - state.weatherFetchedAtMs) / 60000 : Infinity;
-      if (weatherAgeMin < 30) {
+      if (weatherAgeMin < this.config.weatherDataMaxAgeMinutes) {
         return this.makeDecision('morning_weather_brief', 'morning_weather_v1', state, 0.92);
       }
     }
 
-    if (state.current === 'multi_tasking' && this.checkCooldown('suggest_refocus', 15)) {
+    if (state.current === 'multi_tasking' && this.checkCooldown('suggest_refocus', this.config.suggestRefocusCooldownMinutes)) {
       return this.makeDecision('suggest_refocus', 'refocus_v1', state, 0.75);
     }
 
-    const fatigue = computeFatigueScore(state);
-    if (fatigue > 0.72 && this.checkCooldown('suggest_break', 45)) {
+    const fatigue = computeFatigueScore(state, this.config);
+    if (fatigue > this.config.fatigueThreshold && this.checkCooldown('suggest_break', this.config.suggestBreakCooldownMinutes)) {
       return this.makeDecision('suggest_break', 'fatigue_break_v1', state, fatigue);
     }
 
@@ -62,5 +64,9 @@ export class RulesEngine {
     if (last === day) return false;
     this.lastDecisionDay.set(key, day);
     return true;
+  }
+
+  setConfig(config) {
+    this.config = { ...this.config, ...config };
   }
 }

@@ -26,5 +26,6 @@
   ],
   "action": {
     "default_title": "AI Pet Decision Layer"
-  }
+  },
+  "options_page": "options.html"
 }

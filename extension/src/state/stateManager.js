@@ -1,4 +1,5 @@
 import { inTimeRange, minutesBetween } from '../utils/time.js';
+import { DEFAULT_CONFIG } from '../config/defaults.js';
 
 const DEFAULT_STATE = {
   current: 'idle',
@@ -11,24 +12,19 @@ const DEFAULT_STATE = {
   idleSinceMs: null,
   firstSessionSeenDay: null,
   weather: null,
-  weatherFetchedAtMs: null,
-  userPrefs: {
-    weatherBriefsEnabled: true
-  }
+  weatherFetchedAtMs: null
 };
 
 export class StateManager {
-  constructor() {
+  constructor(config = DEFAULT_CONFIG) {
+    this.config = { ...DEFAULT_CONFIG, ...config };
     this.state = { ...DEFAULT_STATE };
   }
 
   async hydrate() {
-    const stored = await chrome.storage.local.get(['runtimeState', 'userPrefs']);
+    const stored = await chrome.storage.local.get(['runtimeState']);
     if (stored.runtimeState) {
       this.state = { ...DEFAULT_STATE, ...stored.runtimeState };
-    }
-    if (stored.userPrefs) {
-      this.state.userPrefs = { ...DEFAULT_STATE.userPrefs, ...stored.userPrefs };
     }
   }
 
@@ -75,7 +71,7 @@ export class StateManager {
 
   deriveCurrentState(nowMs) {
     const date = new Date(nowMs);
-    const isMorning = inTimeRange(date, 6, 10);
+    const isMorning = inTimeRange(date, this.config.morningStartHour, this.config.morningEndHour);
     const today = date.toISOString().slice(0, 10);
 
     const firstSessionOfDay = this.state.firstSessionSeenDay !== today;
@@ -91,26 +87,36 @@ export class StateManager {
       return;
     }
 
-    if (isMorning && this.state.userPrefs.weatherBriefsEnabled && firstSessionOfDay) {
+    if (isMorning && this.config.weatherBriefsEnabled && firstSessionOfDay) {
       this.state.current = 'morning_planning';
       return;
     }
 
-    if (idleMinutes > 10 || this.state.lastIdleState !== 'active') {
+    if (idleMinutes > this.config.idleMinutesThreshold || this.state.lastIdleState !== 'active') {
       this.state.current = 'idle';
       return;
     }
 
-    if (this.state.tabSwitchCount >= 10 && this.state.activeTabDurationMinutes < 2) {
+    if (
+      this.state.tabSwitchCount >= this.config.multitaskTabSwitchThreshold &&
+      this.state.activeTabDurationMinutes < this.config.multitaskShortActiveMinutes
+    ) {
       this.state.current = 'multi_tasking';
       return;
     }
 
-    if (this.state.activeTabDurationMinutes > 15 && this.state.keyEvents > 10) {
+    if (
+      this.state.activeTabDurationMinutes > this.config.focusedActiveMinutes &&
+      this.state.keyEvents > this.config.focusedKeyEventsThreshold
+    ) {
       this.state.current = 'focused_working';
       return;
     }
 
     this.state.current = 'present_but_passive';
+  }
+
+  setConfig(config) {
+    this.config = { ...this.config, ...config };
   }
 }
